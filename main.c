@@ -140,63 +140,70 @@ int getADC()
   return result;
 }
 
-volatile int nTimer0 = 0;
+volatile float rmsAmplitude = 0.0;
+volatile int sumSquares = 0;
+volatile int nSamples = 0;
+const int maxSamples = 20;
+volatile int adcVal = 0;
 
 ISR(TIM0_OVF_vect)
 {
-  // for clock running at 8000000 Hz with prescalar of 1024
-  // this is called 8000000/1024 = 7812.5 times every second
-  // 8-bit counter overflows = 8000000/1024/256 = 30.52 every second
-  if (nTimer0 == 31) {
-    // toggle PB1 
-    PORTB ^= (1 << PB2);
-    
-    // reset 
-    nTimer0 = 0;
-  }
+  // for clock running at 8000000 Hz with prescalar of  256
+  // 8-bit counter overflows = 8000000/256/256 = 122 times every second
 
-  // increment count
-  nTimer0++;
+  // get ADC value
+
+  // start conversion
+  ADCSRA |= (1 << ADSC);
+  // loop till done
+  while(ADCSRA & (1 << ADSC));
+  
+  // use h/l regs
+  unsigned char adcl = ADCL;
+  unsigned char adch = ADCH;
+  int result = (adch << 8) | adcl; 
+
+  adcVal = result;
+
+  if (nSamples == maxSamples) {
+    rmsAmplitude = (float)sumSquares/(float)maxSamples;
+    sumSquares = 0;
+    nSamples = 0;
+  }
+  else {
+    sumSquares += (result - 512)*(result - 512);
+  }
+  nSamples++;
 }
 
 int main (void)
 {
-  // set PB1 to be output - connect your LED to pin 3
-  DDRB = (1 << PB1 | 1 << PB2);
+  // set output
+  DDRB = (1 << PB2);
 
   init_serial();
 
   // enable ADC 
   ADCSRA |= (1 << ADEN);
 
-  // enable auto conversion
-  ADCSRA |= (1 << ADATE);
-
-  // convert first value
-  ADCSRA |= (1 << ADSC);
+  // set ADC port
 
   // set 8-bit timer
   cli();
 
-  // set prescaler to 1024
-  TCCR0B |= (1 << CS02) | (1 << CS00);
+  // set prescaler to 256
+  TCCR0B |= (1 << CS02);
   // set overflow interrupt enable
   TIMSK0 |= (1 << TOIE0);
 
   sei();
 
-
-  int count = 10;
   // loop
   while (1) {
   
     char str[16];
-    //sprintf(str, "%d\n", getADC());
-
-    unsigned char adcl = ADCL;
-    unsigned char adch = ADCH;
-    int result = (adch << 8) | adcl; 
-    sprintf(str, "%d\n", result);
+    sprintf(str, "%.2f\n", rmsAmplitude);
+    //sprintf(str, "%d\n", adcVal);
     send_str(str);
 
     _delay_ms(100);
@@ -204,33 +211,3 @@ int main (void)
  
   return 1;
 }
-
-
-#if 0
-int main (void)
-{
-  // set PB1 to be output - connect your LED to pin 3
-  DDRB = (1 << PB1 | 1 << PB2);
-
-  // loop
-  while (1) {
-
-    // set PB1 high
-    PORTB = (1 << PB1); 
-    // delay
-    _delay_ms(10);
-    // set PB1 low
-    PORTB &= ~(1 << PB1);
-
-    // set PB1 high
-    PORTB = (1 << PB2); 
-    // delay
-    _delay_ms(10);
-    // set PB1 low
-    PORTB &= ~(1 << PB2);
-
-  }
- 
-  return 1;
-}
-#endif

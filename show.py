@@ -43,14 +43,15 @@ class AnalogPlot:
   def update(self, frameNum, a0):
       try:
           line = self.ser.readline()
-          data = [int(val) for val in line.split()]
+          print line
+          data = [float(val) for val in line.split()]
           # print data
           if(len(data) == 1):
               self.add(data)
               a0.set_data(range(self.maxLen), self.ax)
-      except KeyboardInterrupt:
-          print('exiting')
-      
+      except:
+          pass
+
       return a0 
 
   # clean up
