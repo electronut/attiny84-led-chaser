@@ -140,8 +140,30 @@ int getADC()
   return result;
 }
 
+volatile int nTimer0 = 0;
+
+ISR(TIM0_OVF_vect)
+{
+  // for clock running at 8000000 Hz with prescalar of 1024
+  // this is called 8000000/1024 = 7812.5 times every second
+  // 8-bit counter overflows = 8000000/1024/256 = 30.52 every second
+  if (nTimer0 == 31) {
+    // toggle PB1 
+    PORTB ^= (1 << PB2);
+    
+    // reset 
+    nTimer0 = 0;
+  }
+
+  // increment count
+  nTimer0++;
+}
+
 int main (void)
 {
+  // set PB1 to be output - connect your LED to pin 3
+  DDRB = (1 << PB1 | 1 << PB2);
+
   init_serial();
 
   // enable ADC 
@@ -152,6 +174,17 @@ int main (void)
 
   // convert first value
   ADCSRA |= (1 << ADSC);
+
+  // set 8-bit timer
+  cli();
+
+  // set prescaler to 1024
+  TCCR0B |= (1 << CS02) | (1 << CS00);
+  // set overflow interrupt enable
+  TIMSK0 |= (1 << TOIE0);
+
+  sei();
+
 
   int count = 10;
   // loop
