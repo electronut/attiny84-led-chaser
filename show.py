@@ -43,7 +43,7 @@ class AnalogPlot:
   def update(self, frameNum, a0):
       try:
           line = self.ser.readline()
-          print line
+          #print line
           data = [float(val) for val in line.split()]
           # print data
           if(len(data) == 1):

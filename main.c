@@ -1,4 +1,4 @@
-//
+///
 // A simple program for the ATtiny84 that blinks an LED.
 //
 // electronut.in
@@ -145,6 +145,7 @@ volatile int sumSquares = 0;
 volatile int nSamples = 0;
 const int maxSamples = 20;
 volatile int adcVal = 0;
+volatile int count = 0;
 
 ISR(TIM0_OVF_vect)
 {
@@ -179,34 +180,136 @@ ISR(TIM0_OVF_vect)
   }
   nSamples++;
 
-  int val = abs(512 - adcVal);
-  if(val > 16) {
-    PORTB |= (1 << PB2);
-  }
-  else {
-    PORTB &= ~(1 << PB2);
-  }
+  int val = 512 - adcVal;
 
-  if(val > 64) {
+  if(val > 32) {
     PORTB |= (1 << PB0);
   }
   else {
     PORTB &= ~(1 << PB0);
   }
 
-  if(val > 128) {
+  if(val > 64) {
+    PORTA |= (1 << PA1);
+  }
+  else {
+    PORTA &= ~(1 << PA1);
+  }
+
+  if(val > 80) {
     PORTA |= (1 << PA2);
   }
   else {
     PORTA &= ~(1 << PA2);
   }
 
-  if(val > 192) {
+  if(val > 100) {
+    PORTA |= (1 << PA3);
+  }
+  else {
+    PORTA &= ~(1 << PA3);
+  }
+
+  if(val > 120) {
+    PORTA |= (1 << PA4);
+  }
+  else {
+    PORTA &= ~(1 << PA4);
+  }
+
+  if(val > 140) {
+    PORTA |= (1 << PA5);
+  }
+  else {
+    PORTA &= ~(1 << PA5);
+  }
+
+  if(val > 160) {
+    PORTA |= (1 << PA6);
+  }
+  else {
+    PORTA &= ~(1 << PA6);
+  }
+
+  if(val > 180) {
+    PORTA |= (1 << PA7);
+  }
+  else {
+    PORTA &= ~(1 << PA7);
+  }
+
+#if 0
+  int val = (int)rmsAmplitude;
+
+  int testing = 0;
+
+  if(testing) {
+    val = count;
+  }
+  
+  if(val > 8) {
+    PORTB |= (1 << PB0);
+  }
+  else {
+    PORTB &= ~(1 << PB0);
+  }
+
+  if(val > 16) {
     PORTA |= (1 << PA1);
   }
   else {
     PORTA &= ~(1 << PA1);
   }
+  
+  if(val > 32) {
+    PORTA |= (1 << PA2);
+  }
+  else {
+    PORTA &= ~(1 << PA2);
+  }
+
+  if(val > 64) {
+    PORTA |= (1 << PA3);
+  }
+  else {
+    PORTA &= ~(1 << PA3);
+  }
+  
+  if(val > 96) {
+    PORTA |= (1 << PA4);
+  }
+  else {
+    PORTA &= ~(1 << PA4);
+  }
+
+  if(val > 128) {
+    PORTA |= (1 << PA5);
+  }
+  else {
+    PORTA &= ~(1 << PA5);
+  }
+
+  if(val > 192) {
+    PORTA |= (1 << PA6);
+  }
+  else {
+    PORTA &= ~(1 << PA6);
+  }
+
+  if(val > 224) {
+    PORTA |= (1 << PA7);
+  }
+  else {
+    PORTA &= ~(1 << PA7);
+  }
+  
+  if(testing) {
+    count ++;
+    if (count > 256) {
+      count = 0;
+    }
+  }
+#endif
 
 }
 
@@ -214,7 +317,11 @@ int main (void)
 {
   // set output
   DDRB = (1 << PB2) | (1 << PB0) | (1 << PB1);
-  DDRA |= (1 << PA2) | (1 << PA1);
+  DDRA |= 
+    (1 << PA1) | (1 << PA2) |
+    (1 << PA3) | (1 << PA4) |
+    (1 << PA5) | (1 << PA6) |
+    (1 << PA7);
 
   //#if 0
   //init_serial();
@@ -235,53 +342,15 @@ int main (void)
   sei();
   //#endif
 
+
   // loop
-  int val = 0;
 
   while (1) {
   
 #if 0
     char str[16];
-    sprintf(str, "%.2f\n", rmsAmplitude);
-    sprintf(str, "%d\n", adcVal);
+    sprintf(str, "%d\n", getADC());
     send_str(str);
-#endif
-
-#if 0
-
-    if(val > 16) {
-      PORTB |= (1 << PB2);
-    }
-    else {
-      PORTB &= ~(1 << PB2);
-    }
-
-    if(val > 64) {
-      PORTB |= (1 << PB0);
-    }
-    else {
-      PORTB &= ~(1 << PB0);
-    }
-
-    if(val > 128) {
-      PORTA |= (1 << PA2);
-    }
-    else {
-      PORTA &= ~(1 << PA2);
-    }
-
-    if(val > 192) {
-      PORTA |= (1 << PA1);
-    }
-    else {
-      PORTA &= ~(1 << PA1);
-    }
-
-    val += 10;
-    if (val > 255) {
-      val = 0;
-    }
-
 #endif
 
     _delay_ms(200);
