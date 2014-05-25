@@ -178,6 +178,36 @@ ISR(TIM0_OVF_vect)
     sumSquares += (result - 512)*(result - 512);
   }
   nSamples++;
+
+  int val = abs(512 - adcVal);
+  if(val > 16) {
+    PORTB |= (1 << PB2);
+  }
+  else {
+    PORTB &= ~(1 << PB2);
+  }
+
+  if(val > 64) {
+    PORTB |= (1 << PB0);
+  }
+  else {
+    PORTB &= ~(1 << PB0);
+  }
+
+  if(val > 128) {
+    PORTA |= (1 << PA2);
+  }
+  else {
+    PORTA &= ~(1 << PA2);
+  }
+
+  if(val > 192) {
+    PORTA |= (1 << PA1);
+  }
+  else {
+    PORTA &= ~(1 << PA1);
+  }
+
 }
 
 int main (void)
@@ -187,7 +217,7 @@ int main (void)
   DDRA |= (1 << PA2) | (1 << PA1);
 
   //#if 0
-  init_serial();
+  //init_serial();
 
   // enable ADC 
   ADCSRA |= (1 << ADEN);
@@ -210,14 +240,14 @@ int main (void)
 
   while (1) {
   
-    //#if 0
+#if 0
     char str[16];
     sprintf(str, "%.2f\n", rmsAmplitude);
     sprintf(str, "%d\n", adcVal);
     send_str(str);
-    //#endif
+#endif
 
-#if 1
+#if 0
 
     if(val > 16) {
       PORTB |= (1 << PB2);
