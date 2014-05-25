@@ -140,7 +140,7 @@ int getADC()
   return result;
 }
 
-volatile float rmsAmplitude = 0.0;
+volatile float rmsAmplitude = 0;
 volatile int sumSquares = 0;
 volatile int nSamples = 0;
 const int maxSamples = 20;
@@ -165,12 +165,16 @@ ISR(TIM0_OVF_vect)
 
   adcVal = result;
 
+  // calculate RMS amplitude
   if (nSamples == maxSamples) {
-    rmsAmplitude = (float)sumSquares/(float)maxSamples;
+    // compute RMS
+    rmsAmplitude = sqrt(sumSquares/maxSamples);
+    // reset sum and no of samples
     sumSquares = 0;
     nSamples = 0;
   }
   else {
+    // sum squares
     sumSquares += (result - 512)*(result - 512);
   }
   nSamples++;
@@ -179,8 +183,10 @@ ISR(TIM0_OVF_vect)
 int main (void)
 {
   // set output
-  DDRB = (1 << PB2);
+  DDRB = (1 << PB2) | (1 << PB0) | (1 << PB1);
+  DDRA |= (1 << PA2) | (1 << PA1);
 
+  //#if 0
   init_serial();
 
   // enable ADC 
@@ -197,16 +203,58 @@ int main (void)
   TIMSK0 |= (1 << TOIE0);
 
   sei();
+  //#endif
 
   // loop
+  int val = 0;
+
   while (1) {
   
+    //#if 0
     char str[16];
     sprintf(str, "%.2f\n", rmsAmplitude);
-    //sprintf(str, "%d\n", adcVal);
+    sprintf(str, "%d\n", adcVal);
     send_str(str);
+    //#endif
 
-    _delay_ms(100);
+#if 1
+
+    if(val > 16) {
+      PORTB |= (1 << PB2);
+    }
+    else {
+      PORTB &= ~(1 << PB2);
+    }
+
+    if(val > 64) {
+      PORTB |= (1 << PB0);
+    }
+    else {
+      PORTB &= ~(1 << PB0);
+    }
+
+    if(val > 128) {
+      PORTA |= (1 << PA2);
+    }
+    else {
+      PORTA &= ~(1 << PA2);
+    }
+
+    if(val > 192) {
+      PORTA |= (1 << PA1);
+    }
+    else {
+      PORTA &= ~(1 << PA1);
+    }
+
+    val += 10;
+    if (val > 255) {
+      val = 0;
+    }
+
+#endif
+
+    _delay_ms(200);
   }
  
   return 1;
