@@ -140,12 +140,42 @@ int getADC()
   return result;
 }
 
+
+volatile unsigned char pwmValue = 0;
+
+ISR(TIM0_OVF_vect)
+{
+
+  static unsigned char tCount = 255;
+
+  // overflowed from 255 to 0
+  if(++tCount == 0) {
+    // turn all PortA pins off
+    PORTA = 0;
+    
+    // turn on pin 
+    if (pwmValue != 0) {
+      PORTA |= (1 << PA1);
+    }
+  }
+  else {
+    // turn off pin when count exceeds PWM value
+    if (tCount > pwmValue) {
+      PORTA &= ~(1 << PA1);
+    }
+  }
+}
+
+
+#if 0
+
 volatile float rmsAmplitude = 0;
 volatile int sumSquares = 0;
 volatile int nSamples = 0;
 const int maxSamples = 20;
 volatile int adcVal = 0;
 volatile int count = 0;
+
 
 ISR(TIM0_OVF_vect)
 {
@@ -237,81 +267,10 @@ ISR(TIM0_OVF_vect)
   else {
     PORTA &= ~(1 << PA7);
   }
+}
 
-#if 0
-  int val = (int)rmsAmplitude;
-
-  int testing = 0;
-
-  if(testing) {
-    val = count;
-  }
-  
-  if(val > 8) {
-    PORTB |= (1 << PB0);
-  }
-  else {
-    PORTB &= ~(1 << PB0);
-  }
-
-  if(val > 16) {
-    PORTA |= (1 << PA1);
-  }
-  else {
-    PORTA &= ~(1 << PA1);
-  }
-  
-  if(val > 32) {
-    PORTA |= (1 << PA2);
-  }
-  else {
-    PORTA &= ~(1 << PA2);
-  }
-
-  if(val > 64) {
-    PORTA |= (1 << PA3);
-  }
-  else {
-    PORTA &= ~(1 << PA3);
-  }
-  
-  if(val > 96) {
-    PORTA |= (1 << PA4);
-  }
-  else {
-    PORTA &= ~(1 << PA4);
-  }
-
-  if(val > 128) {
-    PORTA |= (1 << PA5);
-  }
-  else {
-    PORTA &= ~(1 << PA5);
-  }
-
-  if(val > 192) {
-    PORTA |= (1 << PA6);
-  }
-  else {
-    PORTA &= ~(1 << PA6);
-  }
-
-  if(val > 224) {
-    PORTA |= (1 << PA7);
-  }
-  else {
-    PORTA &= ~(1 << PA7);
-  }
-  
-  if(testing) {
-    count ++;
-    if (count > 256) {
-      count = 0;
-    }
-  }
 #endif
 
-}
 
 int main (void)
 {
@@ -335,7 +294,7 @@ int main (void)
   cli();
 
   // set prescaler to 256
-  TCCR0B |= (1 << CS02);
+  TCCR0B |= (1 << CS00);
   // set overflow interrupt enable
   TIMSK0 |= (1 << TOIE0);
 
@@ -344,6 +303,7 @@ int main (void)
 
 
   // loop
+  int count = 0;
 
   while (1) {
   
@@ -353,7 +313,9 @@ int main (void)
     send_str(str);
 #endif
 
-    _delay_ms(200);
+    pwmValue++;
+
+    _delay_ms(20);
   }
  
   return 1;
