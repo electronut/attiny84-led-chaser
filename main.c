@@ -16,6 +16,10 @@ char pinTX = PB1;
 volatile unsigned char currByte = 0;
 volatile int sendingData = 0;
 
+// mode = 0 => audio
+// mode = 1 => cylon
+volatile char mode = 1;
+
 // initialize 
 void init_serial()
 {
@@ -143,32 +147,6 @@ int getADC()
 
 volatile unsigned char pwmValue = 0;
 
-ISR(TIM0_OVF_vect)
-{
-
-  static unsigned char tCount = 255;
-
-  // overflowed from 255 to 0
-  if(++tCount == 0) {
-    // turn all PortA pins off
-    PORTA = 0;
-    
-    // turn on pin 
-    if (pwmValue != 0) {
-      PORTA |= (1 << PA1);
-    }
-  }
-  else {
-    // turn off pin when count exceeds PWM value
-    if (tCount > pwmValue) {
-      PORTA &= ~(1 << PA1);
-    }
-  }
-}
-
-
-#if 0
-
 volatile float rmsAmplitude = 0;
 volatile int sumSquares = 0;
 volatile int nSamples = 0;
@@ -179,98 +157,119 @@ volatile int count = 0;
 
 ISR(TIM0_OVF_vect)
 {
-  // for clock running at 8000000 Hz with prescalar of  256
-  // 8-bit counter overflows = 8000000/256/256 = 122 times every second
 
-  // get ADC value
+  if (mode == 1) {
 
-  // start conversion
-  ADCSRA |= (1 << ADSC);
-  // loop till done
-  while(ADCSRA & (1 << ADSC));
+    static unsigned char tCount = 255;
+
+    // overflowed from 255 to 0
+    if(++tCount == 0) {
+      // turn all PortA pins off
+      PORTA = 0;
+    
+      // turn on pin 
+      if (pwmValue != 0) {
+        PORTA |= (1 << PA1);
+      }
+    }
+    else {
+      // turn off pin when count exceeds PWM value
+      if (tCount > pwmValue) {
+        PORTA &= ~(1 << PA1);
+      }
+    }
+  }
+  else {
+    // for clock running at 8000000 Hz with prescalar of  256
+    // 8-bit counter overflows = 8000000/256/256 = 122 times every second
+
+    // get ADC value
+
+    // start conversion
+    ADCSRA |= (1 << ADSC);
+    // loop till done
+    while(ADCSRA & (1 << ADSC));
   
-  // use h/l regs
-  unsigned char adcl = ADCL;
-  unsigned char adch = ADCH;
-  int result = (adch << 8) | adcl; 
+    // use h/l regs
+    unsigned char adcl = ADCL;
+    unsigned char adch = ADCH;
+    int result = (adch << 8) | adcl; 
 
-  adcVal = result;
+    adcVal = result;
 
-  // calculate RMS amplitude
-  if (nSamples == maxSamples) {
-    // compute RMS
-    rmsAmplitude = sqrt(sumSquares/maxSamples);
-    // reset sum and no of samples
-    sumSquares = 0;
-    nSamples = 0;
-  }
-  else {
-    // sum squares
-    sumSquares += (result - 512)*(result - 512);
-  }
-  nSamples++;
+    // calculate RMS amplitude
+    if (nSamples == maxSamples) {
+      // compute RMS
+      rmsAmplitude = sqrt(sumSquares/maxSamples);
+      // reset sum and no of samples
+      sumSquares = 0;
+      nSamples = 0;
+    }
+    else {
+      // sum squares
+      sumSquares += (result - 512)*(result - 512);
+    }
+    nSamples++;
 
-  int val = 512 - adcVal;
+    int val = 512 - adcVal;
 
-  if(val > 32) {
-    PORTB |= (1 << PB0);
-  }
-  else {
-    PORTB &= ~(1 << PB0);
-  }
+    if(val > 32) {
+      PORTB |= (1 << PB0);
+    }
+    else {
+      PORTB &= ~(1 << PB0);
+    }
 
-  if(val > 64) {
-    PORTA |= (1 << PA1);
-  }
-  else {
-    PORTA &= ~(1 << PA1);
-  }
+    if(val > 64) {
+      PORTA |= (1 << PA1);
+    }
+    else {
+      PORTA &= ~(1 << PA1);
+    }
 
-  if(val > 80) {
-    PORTA |= (1 << PA2);
-  }
-  else {
-    PORTA &= ~(1 << PA2);
-  }
+    if(val > 80) {
+      PORTA |= (1 << PA2);
+    }
+    else {
+      PORTA &= ~(1 << PA2);
+    }
 
-  if(val > 100) {
-    PORTA |= (1 << PA3);
-  }
-  else {
-    PORTA &= ~(1 << PA3);
-  }
+    if(val > 100) {
+      PORTA |= (1 << PA3);
+    }
+    else {
+      PORTA &= ~(1 << PA3);
+    }
 
-  if(val > 120) {
-    PORTA |= (1 << PA4);
-  }
-  else {
-    PORTA &= ~(1 << PA4);
-  }
+    if(val > 120) {
+      PORTA |= (1 << PA4);
+    }
+    else {
+      PORTA &= ~(1 << PA4);
+    }
 
-  if(val > 140) {
-    PORTA |= (1 << PA5);
-  }
-  else {
-    PORTA &= ~(1 << PA5);
-  }
+    if(val > 140) {
+      PORTA |= (1 << PA5);
+    }
+    else {
+      PORTA &= ~(1 << PA5);
+    }
 
-  if(val > 160) {
-    PORTA |= (1 << PA6);
-  }
-  else {
-    PORTA &= ~(1 << PA6);
-  }
+    if(val > 160) {
+      PORTA |= (1 << PA6);
+    }
+    else {
+      PORTA &= ~(1 << PA6);
+    }
 
-  if(val > 180) {
-    PORTA |= (1 << PA7);
-  }
-  else {
-    PORTA &= ~(1 << PA7);
+    if(val > 180) {
+      PORTA |= (1 << PA7);
+    }
+    else {
+      PORTA &= ~(1 << PA7);
+    }
   }
 }
-
-#endif
-
 
 int main (void)
 {
