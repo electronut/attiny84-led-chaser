@@ -19,7 +19,7 @@ volatile char mode = 0;
 
 
 volatile int nTimer0 = 0;
-volatile char pin = 1;
+volatile char pin = 0;
 // Timer 0 overflow interrupt handler
 ISR(TIM0_OVF_vect)
 {
@@ -29,9 +29,13 @@ ISR(TIM0_OVF_vect)
     if (nTimer0 == 31) {
       // toggle PB1
       PORTA = 0;
+      PORTB = 0;
+      if (pin == 0) {
+        PORTB |= (1 << PB0);
+      }
       PORTA |= (1 << pin++);                    
       if (pin > 7) {
-        pin = 1;
+        pin = 0;
       }
       // reset
       nTimer0 = 0;
